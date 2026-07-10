@@ -2,46 +2,46 @@ package main
 
 import (
 	"encoding/json"
-	//"fmt"
 	"net/http"
 )
 
-func GetTodo(res http.ResponseWriter, req *http.Request) {
-	res.Header().Set("content-type", "application/json")
-	json.NewEncoder(res).Encode(tasks)
+func GetData(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(res).Encode(Players)
 }
 
-type todo struct {
-	Title string `json:"title"`
-	Id    int    `json:"id"`
-}
-
-func AddTodo(res http.ResponseWriter, req *http.Request) {
+func AddPlayer(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "method not allowed", http.StatusBadRequest)
 		return
 	}
-	var new todo
-	err := json.NewDecoder(req.Body).Decode(&new)
+	var NewPlayer PlayerData
+	err := json.NewDecoder(req.Body).Decode(&NewPlayer)
 	if err != nil {
-		http.Error(res, err.Error(), http.StatusBadRequest)
+		http.Error(res, "error", http.StatusBadRequest)
 		return
 	}
-	new.Id = len(tasks) + 1
-	tasks = append(tasks, new)
+	NewPlayer.Id = len(Players)
+	Players = append(Players, NewPlayer)
 
-	res.Header().Add("content-type", "application/json")
+	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
-	json.NewEncoder(res).Encode(new)
+	json.NewEncoder(res).Encode(NewPlayer)
 }
 
-var tasks = []todo{
-	{Id: 1, Title: "Mosab1"},
-	{Id: 2, Title: "Mosab2"},
+type PlayerData struct {
+	Name string `json:"name"`
+	Id   int    `json:"id"`
+	Age  int    `json:"age"`
+}
+
+var Players = []PlayerData{
+	{Name: "mosab", Age: 20, Id: 1},
+	{Name: "messi", Age: 38, Id: 2},
 }
 
 func main() {
-	http.HandleFunc("/", GetTodo)
-	http.HandleFunc("/add", AddTodo)
-	http.ListenAndServe(":9000", nil)
+	http.HandleFunc("/players", GetData)
+	http.HandleFunc("/players/add", AddPlayer)
+	http.ListenAndServe(":8080", nil)
 }
