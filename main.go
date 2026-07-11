@@ -8,10 +8,6 @@ import (
 )
 
 func AllPlayerHandler(res http.ResponseWriter, req *http.Request) {
-	if req.Header.Get("Content-Type") != "application/json" {
-		http.Error(res, "error", http.StatusInternalServerError)
-		return
-	}
 	switch req.Method {
 	case http.MethodGet:
 		res.Header().Set("Content-Type", "application/json")
@@ -21,10 +17,18 @@ func AllPlayerHandler(res http.ResponseWriter, req *http.Request) {
 		}
 
 	case http.MethodPost:
+		if req.Header.Get("Content-Type") != "application/json" {
+			http.Error(res, "error", http.StatusInternalServerError)
+			return
+		}
 		var NewPlayer PlayerData
 		err := json.NewDecoder(req.Body).Decode(&NewPlayer)
 		if err != nil {
 			http.Error(res, "error", http.StatusBadRequest)
+			return
+		}
+		if NewPlayer.Name == "" || NewPlayer.Age <= 0 {
+			http.Error(res, "Error", http.StatusBadRequest)
 			return
 		}
 		NewPlayer.Id = len(Players) + 1
@@ -57,6 +61,7 @@ func PlayerHandle(res http.ResponseWriter, req *http.Request) {
 					http.Error(res, err.Error(), http.StatusBadRequest)
 					return
 				}
+				return
 			}
 		}
 		http.Error(res, "not found", http.StatusNotFound)
@@ -71,6 +76,35 @@ func PlayerHandle(res http.ResponseWriter, req *http.Request) {
 			}
 		}
 		http.Error(res, "not found", http.StatusNotFound)
+		return
+
+	case http.MethodPut:
+		if req.Header.Get("Content-Type") != "application/json" {
+			http.Error(res, "Error", http.StatusInternalServerError)
+			return
+		}
+		var UpdatePlayer PlayerData
+		err := json.NewDecoder(req.Body).Decode(&UpdatePlayer)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if UpdatePlayer.Name == "" || UpdatePlayer.Age <= 0 {
+			http.Error(res, "Error", http.StatusBadRequest)
+			return
+		}
+		for i, player := range Players {
+			if player.Id == id {
+				Players[i].Name = UpdatePlayer.Name
+				Players[i].Age = UpdatePlayer.Age
+				res.Header().Set("Content-Type", "application/json")
+				res.WriteHeader(http.StatusOK)
+				json.NewEncoder(res).Encode(Players[i])
+				return
+			}
+
+		}
+		http.Error(res, "Not found", http.StatusNotFound)
 		return
 	}
 }
