@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -10,7 +11,11 @@ func AllPlayerHandler(res http.ResponseWriter, req *http.Request) {
 	switch req.Method {
 	case http.MethodGet:
 		res.Header().Set("Content-Type", "application/json")
-		players := GetAllPlayers()
+		erro, players := GetAllPlayers()
+		if erro != nil {
+			fmt.Println(erro)
+			return
+		}
 		err := json.NewEncoder(res).Encode(players)
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)
