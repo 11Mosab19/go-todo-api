@@ -110,3 +110,53 @@ func PlayerHandle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 }
+
+func HandleRegister(res http.ResponseWriter, req *http.Request) {
+	if req.Header.Get("Content-Type") != "application/json" {
+		http.Error(res, "Error", http.StatusInternalServerError)
+	}
+	var NewUser UserData
+	err := json.NewDecoder(req.Body).Decode(&NewUser)
+	if err != nil {
+		http.Error(res, "Error", http.StatusBadRequest)
+		return
+	}
+	err = AddUser(&NewUser)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+}
+
+func HandleLogin(res http.ResponseWriter, req *http.Request) {
+	if req.Header.Get("Content-Type") != "application/json" {
+		http.Error(res, "Error", http.StatusInternalServerError)
+		return
+	}
+	var user LoginData
+	err := json.NewDecoder(req.Body).Decode(&user)
+	if err != nil {
+		http.Error(res, "Error", http.StatusInternalServerError)
+		return
+	}
+	LoggedUser, err := login(user)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	token, err := GenerateToken(LoggedUser)
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(res).Encode(LoginResponse{
+		Token: token,
+	})
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
