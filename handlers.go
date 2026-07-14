@@ -23,12 +23,21 @@ func AllPlayerHandler(res http.ResponseWriter, req *http.Request) {
 		}
 
 	case http.MethodPost:
+		claims, err := VerifyToken(req)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if claims.Role != "admin" {
+			http.Error(res, "Not allowed", http.StatusForbidden)
+			return
+		}
 		if req.Header.Get("Content-Type") != "application/json" {
 			http.Error(res, "error", http.StatusInternalServerError)
 			return
 		}
 		var NewPlayer PlayerData
-		err := json.NewDecoder(req.Body).Decode(&NewPlayer)
+		err = json.NewDecoder(req.Body).Decode(&NewPlayer)
 		if err != nil {
 			http.Error(res, "error", http.StatusBadRequest)
 			return
@@ -71,7 +80,16 @@ func PlayerHandle(res http.ResponseWriter, req *http.Request) {
 		}
 
 	case http.MethodDelete:
-		err := DeletePlayer(id)
+		claims, err := VerifyToken(req)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if claims.Role != "admin" {
+			http.Error(res, "Not allowed", http.StatusForbidden)
+			return
+		}
+		err = DeletePlayer(id)
 		if err != nil {
 			http.Error(res, "Error", http.StatusNotFound)
 			return
@@ -79,12 +97,21 @@ func PlayerHandle(res http.ResponseWriter, req *http.Request) {
 		res.WriteHeader(http.StatusNoContent)
 
 	case http.MethodPut:
+		claims, err := VerifyToken(req)
+		if err != nil {
+			http.Error(res, err.Error(), http.StatusUnauthorized)
+			return
+		}
+		if claims.Role != "admin" {
+			http.Error(res, "Not allowed", http.StatusForbidden)
+			return
+		}
 		if req.Header.Get("Content-Type") != "application/json" {
 			http.Error(res, "Error", http.StatusInternalServerError)
 			return
 		}
 		var UpdatedPlayer PlayerData
-		err := json.NewDecoder(req.Body).Decode(&UpdatedPlayer)
+		err = json.NewDecoder(req.Body).Decode(&UpdatedPlayer)
 
 		if err != nil {
 			http.Error(res, err.Error(), http.StatusBadRequest)

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -136,7 +138,6 @@ func login(user LoginData) (UserData, error) {
 }
 
 func GenerateToken(user UserData) (string, error) {
-
 	claim := Token{
 		UserId: user.Id,
 		Role:   user.Role,
@@ -151,4 +152,20 @@ func GenerateToken(user UserData) (string, error) {
 		return "", err
 	}
 	return key, nil
+}
+
+func VerifyToken(req *http.Request) (*Token, error) {
+	if req.Header.Get("Authorization") == "" {
+		return &Token{}, errors.New("Unauthorized")
+	}
+	if !strings.HasPrefix(req.Header.Get("Authorization"), "Bearer ") {
+		return &Token{}, errors.New("Unauthorized")
+	}
+	claims := &Token{}
+	TokenString := strings.TrimPrefix(req.Header.Get("Authorization"), "Bearer ")
+	ReturnToken, err := jwt.ParseWithClaims(TokenString, claims, func(t *jwt.Token) (any, error) { return SecretKey, nil })
+	if err != nil || !ReturnToken.Valid {
+		return &Token{}, errors.New("Unauthorized")
+	}
+	return claims, nil
 }
